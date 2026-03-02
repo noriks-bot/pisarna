@@ -654,14 +654,14 @@
             });
             list.innerHTML = html;
         }
-        async function fetchModels() { try { const r = await fetch('/firma/api.php?action=models&t=' + Date.now()); const data = await r.json(); agents.forEach(agent => { if (data[agent.id]) agent.model = data[agent.id].display; }); updateStatusPanel(); } catch (e) {} }
+        async function fetchModels() { try { const r = await fetch('https://firma.noriks.com/api.php?action=models&t=' + Date.now()); const data = await r.json(); agents.forEach(agent => { if (data[agent.id]) agent.model = data[agent.id].display; }); updateStatusPanel(); } catch (e) {} }
         async function fetchStatuses() {
             try {
-                const r = await fetch('/firma/api/live-status?t=' + Date.now()); const data = await r.json(); const agentsData = data.agents || data;
+                const r = await fetch('https://firma.noriks.com/api/live-status?t=' + Date.now()); const data = await r.json(); const agentsData = data.agents || data;
                 Object.entries(agentsData).forEach(([id, info]) => { if (!info || typeof info !== 'object') return; const old = agentStatuses[id]; const ns = info.status || 'idle'; agentStatuses[id] = ns; agentTasks[id] = info.task || ''; if (old !== ns || !old) updateAgentPosition(id, ns); if (info.model) { const agent = agents.find(a => a.id === id); if (agent && agent.model !== 'Sub-agent') agent.model = info.model; } });
                 updateStatusPanel(); document.getElementById('lastUpdate').textContent = '· Updated ' + new Date().toLocaleTimeString('sl-SI');
             } catch (e) {
-                try { const r2 = await fetch('/firma/workers/status.json?t=' + Date.now()); const data2 = await r2.json(); Object.entries(data2).forEach(([id, info]) => { const old = agentStatuses[id]; const ns = info.status || 'idle'; agentStatuses[id] = ns; agentTasks[id] = info.task || ''; if (old !== ns || !old) updateAgentPosition(id, ns); }); updateStatusPanel(); document.getElementById('lastUpdate').textContent = '· Updated ' + new Date().toLocaleTimeString('sl-SI'); } catch (e2) {}
+                try { const r2 = await fetch('https://firma.noriks.com/workers/status.json?t=' + Date.now()); const data2 = await r2.json(); Object.entries(data2).forEach(([id, info]) => { const old = agentStatuses[id]; const ns = info.status || 'idle'; agentStatuses[id] = ns; agentTasks[id] = info.task || ''; if (old !== ns || !old) updateAgentPosition(id, ns); }); updateStatusPanel(); document.getElementById('lastUpdate').textContent = '· Updated ' + new Date().toLocaleTimeString('sl-SI'); } catch (e2) {}
             }
         }
         function animateWorkingAgents() { agents.forEach(agent => { if (agent.id === 'mitja') return; if (agentStatuses[agent.id] === 'working' && Math.random() < 0.03) { const av = agentElements[agent.id]; const d = deskMap[agent.id]; if (!d) return; const ox = (Math.random() - 0.5) * 160; const oy = (Math.random() - 0.5) * 100; av.style.left = Math.max(30, Math.min(1150, d.x + 45 + ox)) + 'px'; av.style.top = Math.max(60, Math.min(590, d.y + 55 + oy)) + 'px'; } }); }
