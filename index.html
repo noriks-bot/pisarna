@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Office | Noriks</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #f0ede6;
+            font-family: 'Inter', -apple-system, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            color: #3a3a3a;
+        }
+
+        .header {
+            background: linear-gradient(180deg, #ffffff 0%, #fafaf8 100%);
+            padding: 0 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(0,0,0,0.08);
+            z-index: 100;
+            height: 52px;
+        }
+
+        .header h1 {
+            color: #2c2c2c;
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+        .header h1 span { font-weight: 300; color: #999; margin-left: 6px; }
+
+        .header .status-indicator {
+            display: flex; align-items: center; gap: 10px;
+            color: #4caf50; font-size: 12px; font-weight: 500;
+        }
+
+        .header .status-dot {
+            width: 7px; height: 7px; background: #4caf50; border-radius: 50%;
+            animation: pulse 2.5s ease-in-out infinite;
+            box-shadow: 0 0 8px rgba(76,175,80,0.4);
+        }
+
+        .last-update { color: #999; font-size: 10px; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.85); }
+        }
+
+        .office-container { width: 100%; height: calc(100vh - 52px); display: flex; }
+
+        .office-floor {
+            flex: 1; position: relative; overflow: auto; min-width: 0; background: #e8e4dc;
+        }
+
+        /* Light wood parquet floor */
+        .office-inner {
+            position: relative; width: 1200px; height: 700px; min-height: 100%;
+            background:
+                radial-gradient(ellipse at 50% 30%, rgba(255,255,255,0.25) 0%, transparent 60%),
+                repeating-linear-gradient(90deg,
+                    #e2dbd0 0px, #e2dbd0 79px, #d8d0c4 79px, #d8d0c4 80px
+                ),
+                repeating-linear-gradient(0deg,
+                    transparent 0px, transparent 19px, rgba(0,0,0,0.02) 19px, rgba(0,0,0,0.02) 20px
+                ),
+                linear-gradient(135deg, #e6e0d4 0%, #e2dcd0 50%, #ddd7cb 100%);
+            background-size: 100% 100%, 80px 80px, 80px 20px, 100% 100%;
+        }
+
+        .department-zone {
+            position: absolute; border-radius: 4px;
+        }
+
+        .department-label {
+            position: absolute; top: 12px; left: 16px;
+            color: rgba(0,0,0,0.22); font-size: 9px;
+            text-transform: uppercase; letter-spacing: 2.5px; font-weight: 600;
+        }
+
+        .zone-management { left: 20px; top: 20px; width: 490px; height: 290px; background: rgba(255,255,255,0.08); }
+        .zone-ecommerce { left: 530px; top: 20px; width: 650px; height: 290px; background: rgba(255,255,255,0.08); }
+        .zone-dev { left: 20px; top: 330px; width: 580px; height: 350px; background: rgba(255,255,255,0.08); }
+        .zone-qa { left: 620px; top: 330px; width: 250px; height: 350px; background: rgba(255,255,255,0.08); }
+        .zone-creative { left: 890px; top: 330px; width: 290px; height: 350px; background: rgba(255,255,255,0.08); }
+
+        /* Dark-framed glass walls */
+        .glass-wall { position: absolute; z-index: 2; }
+        .glass-wall.vertical {
+            width: 6px;
+            background: linear-gradient(180deg, #4a4a4a 0%, #3a3a3a 50%, #4a4a4a 100%);
+            border-left: 1px solid #555;
+            border-right: 1px solid #2a2a2a;
+            box-shadow: 2px 0 6px rgba(0,0,0,0.12), -2px 0 6px rgba(0,0,0,0.12);
+        }
+        .glass-wall.horizontal {
+            height: 6px;
+            background: linear-gradient(90deg, #4a4a4a 0%, #3a3a3a 50%, #4a4a4a 100%);
+            border-top: 1px solid #555;
+            border-bottom: 1px solid #2a2a2a;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.12), 0 -2px 6px rgba(0,0,0,0.12);
+        }
+        /* Glass pane shine */
+        .glass-wall.vertical::after {
+            content: ''; position: absolute; left: 1px; top: 0; bottom: 0; width: 2px;
+            background: linear-gradient(180deg, rgba(180,220,240,0.15) 0%, rgba(180,220,240,0.05) 50%, rgba(180,220,240,0.15) 100%);
+        }
+        .glass-wall.horizontal::after {
+            content: ''; position: absolute; top: 1px; left: 0; right: 0; height: 2px;
+            background: linear-gradient(90deg, rgba(180,220,240,0.15) 0%, rgba(180,220,240,0.05) 50%, rgba(180,220,240,0.15) 100%);
+        }
+
+        /* Doors — closed, flush with wall, top-down view */
+        .door {
+            position: absolute; z-index: 3;
+        }
+        /* Vertical door (in vertical wall — door panel fills gap) */
+        .door.vertical {
+            width: 6px; height: 38px;
+            background: linear-gradient(180deg, #c5ab80 0%, #d4bd94 30%, #ccb388 70%, #c5ab80 100%);
+            border: 1px solid #b8a070;
+            border-radius: 1px;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.25), inset 0 -1px 0 rgba(0,0,0,0.08), 0 0 4px rgba(0,0,0,0.1);
+        }
+        /* Door handle (small circle) */
+        .door.vertical::after {
+            content: ''; position: absolute;
+            width: 4px; height: 4px;
+            background: radial-gradient(circle, #ddc080 0%, #b8a050 100%);
+            border-radius: 50%;
+            border: 1px solid #a08940;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+            top: 50%; right: -3px; transform: translateY(-50%);
+        }
+        /* Horizontal door (in horizontal wall) */
+        .door.horizontal {
+            width: 38px; height: 6px;
+            background: linear-gradient(90deg, #c5ab80 0%, #d4bd94 30%, #ccb388 70%, #c5ab80 100%);
+            border: 1px solid #b8a070;
+            border-radius: 1px;
+            box-shadow: inset 1px 0 0 rgba(255,255,255,0.25), inset -1px 0 0 rgba(0,0,0,0.08), 0 0 4px rgba(0,0,0,0.1);
+        }
+        .door.horizontal::after {
+            content: ''; position: absolute;
+            width: 4px; height: 4px;
+            background: radial-gradient(circle, #ddc080 0%, #b8a050 100%);
+            border-radius: 50%;
+            border: 1px solid #a08940;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+            left: 50%; bottom: -3px; transform: translateX(-50%);
+        }
+
+        /* Desk items on desk surface */
+        .desk-item { position: absolute; z-index: 2; pointer-events: none; font-size: 9px; line-height: 1; }
+
+        /* ============ DESKS ============ */
+        .desk { position: absolute; width: 130px; height: 90px; display: flex; flex-direction: column; align-items: center; }
+
+        .desk-surface {
+            width: 120px; height: 58px;
+            background: linear-gradient(160deg, #d4bd94 0%, #ccb388 30%, #c5ab80 60%, #d4bd94 100%);
+            border-radius: 30px 6px 30px 6px; position: relative;
+            box-shadow:
+                0 2px 0 #b8a070,
+                0 4px 0 #a89060,
+                0 6px 16px rgba(0,0,0,0.1),
+                inset 0 1px 0 rgba(255,255,255,0.3),
+                inset 0 -1px 0 rgba(0,0,0,0.05);
+        }
+        .desk-surface::before { content: ''; position: absolute; inset: 0; border-radius: 30px 6px 30px 6px; background: repeating-linear-gradient(175deg, transparent 0px, rgba(255,255,255,0.04) 1px, transparent 2px, transparent 10px); }
+
+        .monitor { position: absolute; width: 38px; height: 24px; background: #1a1a1a; border: 1.5px solid #333; border-radius: 3px; top: -18px; left: 50%; transform: translateX(-50%); box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
+        .monitor-screen { width: 100%; height: 100%; background: #222; border-radius: 2px; transition: all 0.5s; }
+        .monitor-screen.active { background: linear-gradient(135deg, #0d2818 0%, #1a3a28 40%, #0f2818 100%); box-shadow: inset 0 0 12px rgba(76,175,80,0.3), 0 0 4px rgba(76,175,80,0.1); }
+        .monitor-stand { position: absolute; width: 5px; height: 6px; background: linear-gradient(180deg, #444 0%, #333 100%); bottom: -6px; left: 50%; transform: translateX(-50%); border-radius: 0 0 1px 1px; }
+
+        .keyboard { position: absolute; width: 26px; height: 8px; background: linear-gradient(180deg, #ddd 0%, #ccc 100%); border: 1px solid #bbb; border-radius: 2px; bottom: 14px; left: 50%; transform: translateX(-50%); box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
+        .keyboard::before { content: ''; position: absolute; inset: 2px; background: repeating-linear-gradient(90deg, rgba(0,0,0,0.05) 0px, rgba(0,0,0,0.05) 2px, transparent 2px, transparent 4px); }
+
+        /* Black ergonomic chair — top-down view */
+        .chair { position: absolute; width: 36px; height: 38px; bottom: -10px; left: 50%; transform: translateX(-50%); }
+        .chair-seat { width: 30px; height: 30px; background: radial-gradient(circle at 45% 45%, #2d2d2d 0%, #1a1a1a 60%, #111 100%); border-radius: 50%; border: 2px solid #0a0a0a; position: absolute; top: 5px; left: 3px; box-shadow: 0 2px 8px rgba(0,0,0,0.2), inset 0 1px 2px rgba(255,255,255,0.08); }
+        .chair-seat::before { content: ''; position: absolute; inset: 5px; border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%); }
+        .chair-back { width: 26px; height: 12px; background: linear-gradient(180deg, #333 0%, #1e1e1e 100%); border-radius: 6px 6px 2px 2px; position: absolute; top: -2px; left: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
+        .chair-arm-l, .chair-arm-r { width: 4px; height: 14px; background: #222; border-radius: 2px; position: absolute; top: 10px; }
+        .chair-arm-l { left: -1px; }
+        .chair-arm-r { right: -1px; }
+        /* Five-star chair base */
+        .chair-base { position: absolute; bottom: -2px; left: 50%; transform: translateX(-50%); width: 20px; height: 20px; }
+        .chair-base::before { content: '✦'; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 16px; color: rgba(60,60,60,0.3); }
+
+        /* ============ PLANTS ============ */
+        .plant { position: absolute; z-index: 5; pointer-events: none; }
+        .plant-pot { width: 20px; height: 14px; background: linear-gradient(180deg, #e0dbd4 0%, #ccc7be 100%); border-radius: 3px 3px 5px 5px; position: relative; box-shadow: 0 2px 4px rgba(0,0,0,0.08); }
+        .plant-pot::before { content: ''; position: absolute; top: -2px; left: -2px; right: -2px; height: 3px; background: #e8e4de; border-radius: 2px; }
+        .plant-leaves { position: absolute; top: -16px; left: 50%; transform: translateX(-50%); font-size: 20px; line-height: 1; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1)); }
+        .plant-big .plant-pot { width: 30px; height: 18px; }
+        .plant-big .plant-leaves { font-size: 32px; top: -24px; }
+
+        /* ============ FURNITURE ============ */
+        /* Couch */
+        .couch {
+            position: absolute; z-index: 1;
+            width: 100px; height: 44px;
+            background: linear-gradient(180deg, #5a5a5a 0%, #444 100%);
+            border-radius: 8px;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.08);
+        }
+        .couch::before {
+            content: ''; position: absolute; top: 2px; left: 2px; right: 2px; height: 16px;
+            background: linear-gradient(180deg, #666 0%, #555 100%);
+            border-radius: 6px 6px 0 0;
+        }
+        .couch::after {
+            content: ''; position: absolute; bottom: 4px; left: 8px; right: 8px; height: 20px;
+            background: linear-gradient(0deg, #4a4a4a 0%, #555 100%);
+            border-radius: 4px;
+            box-shadow: inset 0 -1px 3px rgba(0,0,0,0.2);
+        }
+        .couch-pillow {
+            position: absolute; z-index: 2;
+            width: 18px; height: 14px;
+            background: linear-gradient(135deg, #78a87a 0%, #5c8a5e 100%);
+            border-radius: 4px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        .coffee-table {
+            position: absolute; z-index: 1;
+            width: 50px; height: 30px;
+            background: linear-gradient(135deg, #d4bd94, #c5ab80);
+            border-radius: 12px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.2);
+        }
+
+        /* Cabinets */
+        .cabinet {
+            position: absolute; z-index: 1;
+            background: linear-gradient(180deg, #ccc6bb 0%, #bfb9ae 100%);
+            border-radius: 3px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.3);
+        }
+        .cabinet::before {
+            content: ''; position: absolute; top: 50%; left: 4px; right: 4px;
+            height: 1px; background: rgba(0,0,0,0.08);
+        }
+        .cabinet-handle {
+            position: absolute; width: 10px; height: 3px;
+            background: #999; border-radius: 2px;
+            left: 50%; transform: translateX(-50%);
+        }
+
+        /* ============ AVATARS ============ */
+        .avatar { position: absolute; width: 44px; height: 44px; transition: left 2s cubic-bezier(0.25,0.1,0.25,1), top 2s cubic-bezier(0.25,0.1,0.25,1); z-index: 10; }
+        .avatar-body { width: 100%; height: 100%; position: relative; }
+        .avatar-circle { width: 42px; height: 42px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.95); display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 3px 12px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05); position: relative; transition: transform 0.3s, box-shadow 0.3s; }
+        .name-tag { position: absolute; top: -28px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,0.95); color: #2c2c2c; padding: 3px 10px; border-radius: 10px; font-size: 9.5px; white-space: nowrap; font-weight: 600; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.06); letter-spacing: 0.3px; backdrop-filter: blur(8px); }
+        .status-badge { position: absolute; top: -4px; right: -4px; width: 14px; height: 14px; border-radius: 50%; border: 2px solid #e6e0d4; font-size: 7px; display: flex; align-items: center; justify-content: center; z-index: 11; }
+        .status-working { background: #4caf50; box-shadow: 0 0 6px rgba(76,175,80,0.5); animation: statusPulse 1.2s infinite; }
+        .status-idle { background: #ffc107; box-shadow: 0 0 4px rgba(255,193,7,0.3); }
+        .status-checking { background: #ff9800; box-shadow: 0 0 6px rgba(255,152,0,0.4); animation: statusPulse 1.5s infinite; }
+        @keyframes statusPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.25); } }
+
+        .agent-miki .avatar-circle    { background: linear-gradient(135deg, #e94560, #c43152); }
+        .agent-elon .avatar-circle    { background: linear-gradient(135deg, #c0392b, #962d22); }
+        .agent-mark .avatar-circle    { background: linear-gradient(135deg, #3498db, #2476b0); }
+        .agent-nina .avatar-circle    { background: linear-gradient(135deg, #9b59b6, #7d3f96); }
+        .agent-lana .avatar-circle    { background: linear-gradient(135deg, #5dade2, #3c91c4); }
+        .agent-alex .avatar-circle    { background: linear-gradient(135deg, #fd79a8, #d96090); }
+        .agent-roki .avatar-circle    { background: linear-gradient(135deg, #27ae60, #1e8c4d); }
+        .agent-nikolo .avatar-circle  { background: linear-gradient(135deg, #00cec9, #00a8a3); }
+        .agent-mitja .avatar-circle   { background: linear-gradient(135deg, #f39c12, #c8800e); }
+        .agent-tina .avatar-circle    { background: linear-gradient(135deg, #a29bfe, #7c73e6); }
+        .agent-zehrudin .avatar-circle{ background: linear-gradient(135deg, #00b894, #009477); }
+
+        .walking .avatar-circle { animation: workGlow 1.5s ease-in-out infinite; }
+        .checking .avatar-circle { animation: workGlow 1s ease-in-out infinite; }
+        @keyframes workGlow {
+            0%, 100% { transform: scale(1); box-shadow: 0 3px 12px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05); }
+            50% { transform: scale(1.06); box-shadow: 0 4px 18px rgba(0,0,0,0.2), 0 0 12px rgba(76,175,80,0.12); }
+        }
+
+        /* ============ STATUS PANEL ============ */
+        .status-panel { width: 364px; min-width: 364px; background: linear-gradient(180deg, #ffffff 0%, #fafaf8 100%); border-left: 1px solid rgba(0,0,0,0.06); padding: 20px; z-index: 100; overflow-y: auto; }
+        .status-panel::-webkit-scrollbar { width: 4px; }
+        .status-panel::-webkit-scrollbar-track { background: transparent; }
+        .status-panel::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 4px; }
+        .status-panel h3 { color: #2c2c2c; margin-bottom: 18px; font-size: 14px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
+        .status-section-label { color: rgba(0,0,0,0.3); font-size: 9px; text-transform: uppercase; letter-spacing: 2.5px; font-weight: 600; margin: 18px 0 8px 0; padding-bottom: 6px; border-bottom: 1px solid rgba(0,0,0,0.06); }
+        .agent-status-item { display: flex; align-items: center; gap: 12px; padding: 10px 10px; border-radius: 10px; transition: background 0.2s; }
+        .agent-status-item:hover { background: rgba(0,0,0,0.02); }
+        .agent-status-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+        .agent-status-dot.working { background: #4caf50; box-shadow: 0 0 6px rgba(76,175,80,0.4); animation: pulse 1.2s infinite; }
+        .agent-status-dot.idle { background: #ffc107; }
+        .agent-status-dot.checking { background: #ff9800; box-shadow: 0 0 6px rgba(255,152,0,0.3); animation: pulse 1.5s infinite; }
+        .agent-status-info { flex: 1; min-width: 0; }
+        .agent-status-name { color: #2c2c2c; font-size: 13px; font-weight: 600; }
+        .agent-status-role { color: #888; font-size: 11px; margin-top: 1px; }
+        .agent-status-model { color: #aaa; font-size: 10px; margin-top: 1px; }
+        .agent-status-state { font-size: 10px; font-weight: 600; margin-top: 2px; }
+        .agent-status-state.working { color: #4caf50; }
+        .agent-status-state.idle { color: #ffa000; }
+        .agent-status-state.checking { color: #ff9800; }
+        .agent-status-task { color: #4caf50; font-size: 11px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .agent-status-task.checking-task { color: #ff9800; }
+        
+        
+        
+        /* === Enhanced working/idle indicators === */
+        .desk.desk-working .desk-surface {
+            border: 3px solid #4caf50;
+            box-shadow: 0 0 14px rgba(76,175,80,0.5), 0 2px 0 #b8a070, 0 4px 0 #a89060, 0 6px 16px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.3);
+            animation: deskBorderPulse 2s ease-in-out infinite;
+        }
+        @keyframes deskBorderPulse {
+            0%, 100% { border-color: #4caf50; box-shadow: 0 0 10px rgba(76,175,80,0.4), 0 2px 0 #b8a070, 0 4px 0 #a89060, 0 6px 16px rgba(0,0,0,0.1); }
+            50% { border-color: #66bb6a; box-shadow: 0 0 20px rgba(76,175,80,0.6), 0 2px 0 #b8a070, 0 4px 0 #a89060, 0 6px 16px rgba(0,0,0,0.1); }
+        }
+        .desk.desk-working .keyboard { animation: typing 0.3s steps(2) infinite; }
+        @keyframes typing {
+            0% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(-1px); }
+        }
+        .desk.desk-idle .desk-surface { filter: brightness(0.88) saturate(0.6); }
+        .desk.desk-idle .monitor-screen { background: #1a1a1a !important; box-shadow: none !important; }
+        .desk.desk-idle .chair-seat { filter: brightness(0.85); }
+        .avatar.idle-agent { filter: saturate(0.4) brightness(0.85); }
+        .avatar.idle-agent .avatar-circle { box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+        .avatar.working-agent .avatar-circle {
+            border: 3px solid #4caf50 !important;
+            box-shadow: 0 0 16px rgba(76,175,80,0.5), 0 0 4px rgba(76,175,80,0.3), 0 3px 12px rgba(0,0,0,0.15);
+        }
+        /* Status ring around working avatar */
+        .avatar.working-agent .avatar-circle::before {
+            content: ''; position: absolute; inset: -6px; border-radius: 50%;
+            border: 2px solid rgba(76,175,80,0.6);
+            animation: statusRing 2s ease-in-out infinite;
+        }
+        @keyframes statusRing {
+            0%, 100% { transform: scale(1); opacity: 0.7; }
+            50% { transform: scale(1.12); opacity: 0.3; }
+        }
+        .avatar.working-agent .avatar-circle { position: relative; overflow: visible; }
+
+        /* Door open/close animations */
+        .door { transition: transform 0.4s ease, opacity 0.3s ease; transform-origin: left center; }
+        .door.horizontal { transform-origin: center top; }
+        .door.open.vertical { transform: rotateY(80deg); opacity: 0.5; }
+        .door.open.horizontal { transform: rotateX(80deg); opacity: 0.5; }
+
+        /* Toggle button */
+        .sidebar-toggle {
+            position: absolute; top: 10px; right: 10px; z-index: 101;
+            width: 32px; height: 32px; border-radius: 8px;
+            background: rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.08);
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            font-size: 14px; color: #666; transition: background 0.2s;
+        }
+        .sidebar-toggle:hover { background: rgba(0,0,0,0.1); }
+        .status-panel { transition: width 0.35s ease, min-width 0.35s ease, padding 0.35s ease, opacity 0.3s ease; position: relative; }
+        .status-panel.collapsed { width: 0px !important; min-width: 0px !important; padding: 0 !important; opacity: 0; overflow: hidden; border-left: none; }
+        .sidebar-toggle-floating {
+            position: absolute; top: 62px; right: 8px; z-index: 101;
+            width: 32px; height: 32px; border-radius: 8px;
+            background: rgba(255,255,255,0.95); border: 1px solid rgba(0,0,0,0.1);
+            cursor: pointer; display: none; align-items: center; justify-content: center;
+            font-size: 14px; color: #666; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: background 0.2s;
+        }
+        .sidebar-toggle-floating:hover { background: #fff; }
+        .sidebar-toggle-floating.visible { display: flex; }
+
+        @media (max-width: 1200px) { .status-panel { width: 294px; min-width: 294px; } }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏢 NORIKS<span>Digital Office</span></h1>
+        <div class="status-indicator">
+            <div class="status-dot"></div>
+            <span>Live</span>
+            <span class="last-update" id="lastUpdate"></span>
+        </div>
+    </div>
+    <div class="office-container">
+        <div class="office-floor">
+            <div class="office-inner" id="office">
+                <div class="department-zone zone-management"><div class="department-label">⭐ Management</div></div>
+                <div class="department-zone zone-ecommerce"><div class="department-label">🛒 E-Commerce & Marketing</div></div>
+                <div class="department-zone zone-dev"><div class="department-label">💻 Development</div></div>
+                <div class="department-zone zone-qa"><div class="department-label">🔍 Quality Assurance</div></div>
+                <div class="department-zone zone-creative"><div class="department-label">🎨 Creative</div></div>
+
+                <!-- Dark-framed glass walls -->
+                <div class="glass-wall vertical" style="left:519px; top:20px; height:290px;"></div>
+                <div class="glass-wall horizontal" style="left:20px; top:320px; width:1160px;"></div>
+                <div class="glass-wall vertical" style="left:610px; top:330px; height:350px;"></div>
+                <div class="glass-wall vertical" style="left:880px; top:330px; height:350px;"></div>
+
+                <!-- Doors — closed, flush with walls -->
+                <div class="door vertical" id="door-mgmt-ecom" style="left:519px; top:145px;"></div>
+                <div class="door horizontal" id="door-corridor-dev" style="left:230px; top:320px;"></div>
+                <div class="door horizontal" id="door-corridor-ecom" style="left:760px; top:320px;"></div>
+                <div class="door vertical" id="door-dev-qa" style="left:610px; top:480px;"></div>
+                <div class="door vertical" id="door-qa-creative" style="left:880px; top:480px;"></div>
+
+                <!-- Desk items rendered by JS on each desk -->
+
+                <!-- ===== FURNITURE ===== -->
+                <!-- Couch + coffee table in management area -->
+                <div class="couch" style="left:350px; top:220px;">
+                    <div class="couch-pillow" style="top:6px; left:8px;"></div>
+                    <div class="couch-pillow" style="top:6px; right:8px;"></div>
+                </div>
+                <div class="coffee-table" style="left:375px; top:270px;"></div>
+
+                <!-- Couch in creative lounge -->
+                <div class="couch" style="left:920px; top:600px; width:80px;">
+                    <div class="couch-pillow" style="top:6px; left:6px;"></div>
+                    <div class="couch-pillow" style="top:6px; right:6px;"></div>
+                </div>
+
+                <!-- Cabinets along walls -->
+                <div class="cabinet" style="left:26px; top:35px; width:16px; height:80px;">
+                    <div class="cabinet-handle" style="top:18px;"></div>
+                    <div class="cabinet-handle" style="bottom:18px;"></div>
+                </div>
+                <div class="cabinet" style="left:26px; top:130px; width:16px; height:80px;">
+                    <div class="cabinet-handle" style="top:18px;"></div>
+                    <div class="cabinet-handle" style="bottom:18px;"></div>
+                </div>
+                <div class="cabinet" style="left:1150px; top:35px; width:16px; height:80px;">
+                    <div class="cabinet-handle" style="top:18px;"></div>
+                    <div class="cabinet-handle" style="bottom:18px;"></div>
+                </div>
+                <div class="cabinet" style="left:1150px; top:130px; width:16px; height:80px;">
+                    <div class="cabinet-handle" style="top:18px;"></div>
+                    <div class="cabinet-handle" style="bottom:18px;"></div>
+                </div>
+                <div class="cabinet" style="left:26px; top:350px; width:16px; height:80px;">
+                    <div class="cabinet-handle" style="top:18px;"></div>
+                    <div class="cabinet-handle" style="bottom:18px;"></div>
+                </div>
+                <div class="cabinet" style="left:1150px; top:350px; width:16px; height:80px;">
+                    <div class="cabinet-handle" style="top:18px;"></div>
+                    <div class="cabinet-handle" style="bottom:18px;"></div>
+                </div>
+            </div>
+        </div>
+        <div class="sidebar-toggle-floating" id="sidebarOpen" onclick="toggleSidebar()">👥</div>
+        <div class="status-panel" id="statusPanel">
+            <button class="sidebar-toggle" id="sidebarClose" onclick="toggleSidebar()">✕</button>
+            <h3>👥 Team Status</h3>
+            <div id="status-list"></div>
+        </div>
+    </div>
+    <script>
+        /* ===== PAIRED DESK LAYOUT =====
+         * Pairs face each other across shared desk. Solo agents get their own desk.
+         * desk position = where the agent's monitor/keyboard/chair anchor is.
+         * For pairs: agent1 sits TOP side (y), agent2 sits BOTTOM side (y+offset).
+         */
+        const departments = {
+            management: { label: '⭐ Management', agents: ['miki', 'elon', 'mark'],
+                desks: [{ x: 55, y: 110 }, { x: 195, y: 110 }, { x: 335, y: 110 }] },
+            ecommerce: { label: '🛒 E-Commerce & Marketing', agents: ['nina', 'lana', 'alex'],
+                desks: [{ x: 565, y: 100 }, { x: 715, y: 100 }, { x: 865, y: 100 }] },
+            dev: { label: '💻 Development', agents: ['roki', 'nikolo', 'zehrudin'],
+                desks: [{ x: 55, y: 400 }, { x: 215, y: 400 }, { x: 375, y: 400 }] },
+            qa: { label: '🔍 QA', agents: ['mitja'], desks: [{ x: 690, y: 410 }] },
+            creative: { label: '🎨 Creative', agents: ['tina'], desks: [{ x: 950, y: 410 }] }
+        };
+        
+        /* Mitja patrol system — walks through doors between offices */
+        const mitjaPatrol = {
+            // Each stop: position + optional door to open before moving, and which room he's checking
+            // Route: QA desk → door-dev-qa → Dev room (check) → door-dev-qa back → door-corridor-dev → Management (check) → door-corridor-dev back
+            //   → corridor → door-mgmt-ecom(via corridor-ecom) → Ecommerce (check) → back → door-corridor-ecom → corridor
+            //   → door-qa-creative → Creative (check) → door-qa-creative back → QA desk
+            route: [
+                // Start at QA desk
+                { x: 710, y: 470, pause: 2000, label: 'QA desk' },
+                // Walk to door between dev & qa
+                { x: 618, y: 480, door: 'door-dev-qa', pause: 0 },
+                // Walk through door into dev
+                { x: 590, y: 480, pause: 0 },
+                // Walk to dev area center to check
+                { x: 300, y: 460, pause: 3500, label: 'Checking Dev' },
+                // Walk back to door
+                { x: 590, y: 480, pause: 0 },
+                { x: 618, y: 480, doorClose: 'door-dev-qa', pause: 0 },
+                // Walk to corridor door (dev side)
+                { x: 250, y: 490, pause: 0 },
+                { x: 250, y: 330, door: 'door-corridor-dev', pause: 0 },
+                // Walk through into management
+                { x: 250, y: 300, pause: 0 },
+                { x: 250, y: 200, pause: 3500, label: 'Checking Management' },
+                // Back to corridor
+                { x: 250, y: 300, pause: 0 },
+                { x: 250, y: 330, doorClose: 'door-corridor-dev', pause: 0 },
+                // Walk along corridor to mgmt-ecom door
+                { x: 519, y: 170, door: 'door-mgmt-ecom', pause: 0 },
+                // Into ecommerce
+                { x: 540, y: 170, pause: 0 },
+                { x: 720, y: 170, pause: 3500, label: 'Checking E-Commerce' },
+                // Back through door
+                { x: 540, y: 170, pause: 0 },
+                { x: 519, y: 170, doorClose: 'door-mgmt-ecom', pause: 0 },
+                // Go down to corridor-ecom door
+                { x: 770, y: 300, pause: 0 },
+                { x: 770, y: 330, door: 'door-corridor-ecom', pause: 0 },
+                // Through to bottom corridor
+                { x: 770, y: 350, pause: 0 },
+                { x: 770, y: 340, doorClose: 'door-corridor-ecom', pause: 0 },
+                // Walk to qa-creative door
+                { x: 888, y: 480, door: 'door-qa-creative', pause: 0 },
+                // Into creative
+                { x: 900, y: 480, pause: 0 },
+                { x: 980, y: 460, pause: 3500, label: 'Checking Creative' },
+                // Back
+                { x: 900, y: 480, pause: 0 },
+                { x: 888, y: 480, doorClose: 'door-qa-creative', pause: 0 },
+                // Back to QA desk
+                { x: 710, y: 470, pause: 1000 },
+            ],
+            current: 0,
+            moving: false,
+            paused: false
+        };
+
+        function openDoor(id) {
+            const d = document.getElementById(id);
+            if (d) d.classList.add('open');
+        }
+        function closeDoor(id) {
+            const d = document.getElementById(id);
+            if (d) d.classList.remove('open');
+        }
+
+        function mitjaStep() {
+            if (mitjaPatrol.moving) return;
+            mitjaPatrol.moving = true;
+            const step = mitjaPatrol.route[mitjaPatrol.current];
+            const av = agentElements['mitja'];
+
+            // Open door if needed
+            if (step.door) openDoor(step.door);
+            if (step.doorClose) closeDoor(step.doorClose);
+
+            // Calculate travel time based on distance
+            const curX = parseFloat(av.style.left) || 710;
+            const curY = parseFloat(av.style.top) || 470;
+            const dist = Math.sqrt((step.x - curX) ** 2 + (step.y - curY) ** 2);
+            const travelTime = Math.max(600, Math.min(2500, dist * 5));
+
+            av.style.transition = `left ${travelTime}ms linear, top ${travelTime}ms linear`;
+            av.style.left = step.x + 'px';
+            av.style.top = step.y + 'px';
+
+            setTimeout(() => {
+                // After arriving, pause if needed then advance
+                setTimeout(() => {
+                    mitjaPatrol.current = (mitjaPatrol.current + 1) % mitjaPatrol.route.length;
+                    mitjaPatrol.moving = false;
+                }, step.pause || 300);
+            }, travelTime);
+        }
+
+        const agents = [
+            { id: 'miki', name: 'Miki', emoji: '🦞', role: 'COO', dept: 'management', model: '...' },
+            { id: 'elon', name: 'Elon', emoji: '🧠', role: 'AI Strategy', dept: 'management', model: '...' },
+            { id: 'mark', name: 'Mark', emoji: '📊', role: 'Operations', dept: 'management', model: '...' },
+            { id: 'nina', name: 'Nina', emoji: '🛒', role: 'WooCommerce', dept: 'ecommerce', model: '...' },
+            { id: 'lana', name: 'Lana', emoji: '📧', role: 'Klaviyo', dept: 'ecommerce', model: '...' },
+            { id: 'alex', name: 'Alex', emoji: '🎬', role: 'TikTok', dept: 'ecommerce', model: '...' },
+            { id: 'roki', name: 'Roki', emoji: '💻', role: 'Developer', dept: 'dev', model: '...' },
+            { id: 'nikolo', name: 'Nikolo', emoji: '🖥️', role: 'Developer', dept: 'dev', model: '...' },
+            { id: 'mitja', name: 'Mitja', emoji: '🔍', role: 'QA Inspector', dept: 'qa', model: '...' },
+            { id: 'tina', name: 'Tina', emoji: '🎨', role: 'Design', dept: 'creative', model: '...' },
+            { id: 'zehrudin', name: 'Zehrudin', emoji: '📱', role: 'Android Dev', dept: 'dev', model: '...' }
+        ];
+        const modelDisplayNames = { 'anthropic/claude-opus-4-6': 'Opus 4.6', 'anthropic/claude-opus-4-5': 'Opus 4.5', 'anthropic/claude-sonnet-4-20250514': 'Sonnet 4', 'anthropic/claude-sonnet-4': 'Sonnet 4', 'anthropic/claude-haiku-3.5': 'Haiku 3.5' };
+        function formatModel(raw) { return modelDisplayNames[raw] || raw; }
+        let agentStatuses = {}, agentTasks = {}, agentElements = {}, deskMap = {};
+        Object.values(departments).forEach(dept => { dept.agents.forEach((id, i) => { deskMap[id] = dept.desks[i]; }); });
+        const plants = [
+            { x: 10, y: 12, big: true }, { x: 250, y: 16, big: false }, { x: 480, y: 16, big: false },
+            { x: 780, y: 16, big: true }, { x: 1150, y: 16, big: true },
+            { x: 10, y: 260, big: false }, { x: 510, y: 270, big: false },
+            { x: 10, y: 340, big: true }, { x: 560, y: 345, big: false }, { x: 860, y: 340, big: true }, { x: 1155, y: 340, big: true },
+            { x: 300, y: 550, big: false }, { x: 560, y: 620, big: false }, { x: 860, y: 620, big: false }, { x: 1155, y: 620, big: false },
+            { x: 10, y: 640, big: false }
+        ];
+        const plantEmojis = ['🌿', '🪴', '🌱', '☘️', '🌿', '🪴'];
+
+        const deskItems = { miki:'☕', elon:'📱', mark:'📋', nina:'📊', lana:'📧', alex:'🎬', roki:'🖱️', nikolo:'☕', mitja:'📋', tina:'✏️', zehrudin:'📱' };
+        function createDesk(x, y, agentId) {
+            const d = document.createElement('div'); d.className = 'desk'; d.id = 'desk-' + agentId; d.style.left = x + 'px'; d.style.top = y + 'px';
+            const item = deskItems[agentId] || '';
+            d.innerHTML = `<div class="desk-surface"><div class="monitor"><div class="monitor-screen" id="screen-${agentId}"></div><div class="monitor-stand"></div></div><div class="keyboard"></div>${item ? `<div class="desk-item" style="bottom:16px;right:12px;">${item}</div>` : ''}</div><div class="chair"><div class="chair-back"></div><div class="chair-arm-l"></div><div class="chair-arm-r"></div><div class="chair-seat"></div><div class="chair-base"></div></div>`;
+            return d;
+        }
+        function createAvatar(agent) {
+            const a = document.createElement('div'); a.className = `avatar agent-${agent.id}`; a.id = `avatar-${agent.id}`;
+            a.innerHTML = `<div class="name-tag">${agent.emoji} ${agent.name}</div><div class="status-badge" id="badge-${agent.id}"></div><div class="avatar-body"><div class="avatar-circle">${agent.emoji}</div></div>`;
+            return a;
+        }
+        function createPlants() {
+            const office = document.getElementById('office');
+            plants.forEach((p, i) => { const el = document.createElement('div'); el.className = 'plant' + (p.big ? ' plant-big' : ''); el.style.left = p.x + 'px'; el.style.top = p.y + 'px'; el.innerHTML = `<div class="plant-pot"><div class="plant-leaves">${plantEmojis[i % plantEmojis.length]}</div></div>`; office.appendChild(el); });
+        }
+        function seatAtDesk(id) { const av = agentElements[id]; const d = deskMap[id]; if (!d) return; av.style.left = (d.x + 45) + 'px'; av.style.top = (d.y + 55) + 'px'; }
+        function initOffice() {
+            const office = document.getElementById('office'); createPlants();
+            agents.forEach(agent => {
+                const d = deskMap[agent.id]; if (d) office.appendChild(createDesk(d.x, d.y, agent.id));
+                const av = createAvatar(agent); office.appendChild(av); agentElements[agent.id] = av;
+                if (agent.id === 'mitja') { const wp = mitjaPatrol.route[0]; av.style.left = wp.x + 'px'; av.style.top = wp.y + 'px'; av.classList.add('checking'); document.getElementById('badge-mitja').className = 'status-badge status-checking'; document.getElementById('badge-mitja').textContent = '🔍'; }
+                else { seatAtDesk(agent.id); }
+            });
+            updateStatusPanel();
+        }
+        function updateAgentPosition(id, status) {
+            if (id === 'mitja') return; const av = agentElements[id]; const scr = document.getElementById('screen-' + id); const badge = document.getElementById('badge-' + id); const desk = document.getElementById('desk-' + id);
+            if (status === 'working') {
+                av.classList.add('walking'); av.classList.add('working-agent'); av.classList.remove('idle-agent');
+                if (scr) scr.classList.add('active'); badge.className = 'status-badge status-working'; badge.textContent = '⚡';
+                if (desk) { desk.classList.add('desk-working'); desk.classList.remove('desk-idle'); }
+            } else {
+                av.classList.remove('walking'); av.classList.remove('working-agent'); av.classList.add('idle-agent');
+                if (scr) scr.classList.remove('active'); badge.className = 'status-badge status-idle'; badge.textContent = '💤'; seatAtDesk(id);
+                if (desk) { desk.classList.remove('desk-working'); desk.classList.add('desk-idle'); }
+            }
+        }
+        function moveMitja() { mitjaStep(); }
+        function updateStatusPanel() {
+            const list = document.getElementById('status-list');
+            const deptOrder = [{ key: 'management', label: '⭐ Management' }, { key: 'ecommerce', label: '🛒 E-Commerce & Marketing' }, { key: 'dev', label: '💻 Development' }, { key: 'qa', label: '🔍 Quality Assurance' }, { key: 'creative', label: '🎨 Creative' }];
+            let html = '';
+            deptOrder.forEach(dept => {
+                const da = agents.filter(a => a.dept === dept.key); if (!da.length) return;
+                html += `<div class="status-section-label">${dept.label}</div>`;
+                da.forEach(agent => {
+                    const isMitja = agent.id === 'mitja'; const status = isMitja ? 'checking' : (agentStatuses[agent.id] || 'idle'); const task = agentTasks[agent.id] || '';
+                    const stateLabel = isMitja ? '🔍 Checking' : (status === 'working' ? '🟢 Dela' : '🟡 Idle'); const stateClass = isMitja ? 'checking' : status;
+                    html += `<div class="agent-status-item"><div class="agent-status-dot ${status}"></div><div class="agent-status-info"><div class="agent-status-name">${agent.emoji} ${agent.name}</div><div class="agent-status-role">${agent.role}</div><div class="agent-status-model">🤖 ${agent.model}</div><div class="agent-status-state ${stateClass}">${stateLabel}</div>${task ? `<div class="agent-status-task ${isMitja ? 'checking-task' : ''}">▸ ${task}</div>` : ''}</div></div>`;
+                });
+            });
+            list.innerHTML = html;
+        }
+        async function fetchModels() { try { const r = await fetch('/firma/api.php?action=models&t=' + Date.now()); const data = await r.json(); agents.forEach(agent => { if (data[agent.id]) agent.model = data[agent.id].display; }); updateStatusPanel(); } catch (e) {} }
+        async function fetchStatuses() {
+            try {
+                const r = await fetch('/firma/api/live-status?t=' + Date.now()); const data = await r.json(); const agentsData = data.agents || data;
+                Object.entries(agentsData).forEach(([id, info]) => { if (!info || typeof info !== 'object') return; const old = agentStatuses[id]; const ns = info.status || 'idle'; agentStatuses[id] = ns; agentTasks[id] = info.task || ''; if (old !== ns || !old) updateAgentPosition(id, ns); if (info.model) { const agent = agents.find(a => a.id === id); if (agent && agent.model !== 'Sub-agent') agent.model = info.model; } });
+                updateStatusPanel(); document.getElementById('lastUpdate').textContent = '· Updated ' + new Date().toLocaleTimeString('sl-SI');
+            } catch (e) {
+                try { const r2 = await fetch('/firma/workers/status.json?t=' + Date.now()); const data2 = await r2.json(); Object.entries(data2).forEach(([id, info]) => { const old = agentStatuses[id]; const ns = info.status || 'idle'; agentStatuses[id] = ns; agentTasks[id] = info.task || ''; if (old !== ns || !old) updateAgentPosition(id, ns); }); updateStatusPanel(); document.getElementById('lastUpdate').textContent = '· Updated ' + new Date().toLocaleTimeString('sl-SI'); } catch (e2) {}
+            }
+        }
+        function animateWorkingAgents() { agents.forEach(agent => { if (agent.id === 'mitja') return; if (agentStatuses[agent.id] === 'working' && Math.random() < 0.03) { const av = agentElements[agent.id]; const d = deskMap[agent.id]; if (!d) return; const ox = (Math.random() - 0.5) * 160; const oy = (Math.random() - 0.5) * 100; av.style.left = Math.max(30, Math.min(1150, d.x + 45 + ox)) + 'px'; av.style.top = Math.max(60, Math.min(590, d.y + 55 + oy)) + 'px'; } }); }
+
+        
+        function toggleSidebar() {
+            const panel = document.getElementById('statusPanel');
+            const floatBtn = document.getElementById('sidebarOpen');
+            panel.classList.toggle('collapsed');
+            const collapsed = panel.classList.contains('collapsed');
+            floatBtn.classList.toggle('visible', collapsed);
+        }
+
+        initOffice(); fetchModels(); fetchStatuses();
+        setInterval(fetchStatuses, 3000); setInterval(fetchModels, 30000); setInterval(animateWorkingAgents, 500); setInterval(moveMitja, 800);
+    </script>
+</body>
+</html>
